@@ -1,0 +1,12 @@
+server {
+  listen 8080;
+
+  location = /healthz {
+    default_type application/json;
+    return 200 '{"status":"ok","service":"app","env":"${ENV_NAME}"}';
+  }
+
+  location / {
+    return 200 "ok\n";
+  }
+}

@@ -1,0 +1,43 @@
+services:
+  app:
+    image: nginx:1.27-alpine
+    environment:
+      ENV_NAME: ${ENV_NAME:-local}
+    volumes:
+      - ./app/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    command:
+      - /bin/sh
+      - -lc
+      - |
+        envsubst '$$ENV_NAME' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
+        nginx -g 'daemon off;'
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    networks:
+      - appnet
+
+  proxy:
+    image: nginx:1.27-alpine
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    driver: bridge
